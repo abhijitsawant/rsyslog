@@ -24,7 +24,7 @@ It listens on TCP port <code>514</code>, stores logs by hostname and timestamp, 
 <p>Configures Rsyslog to:</p>
 <ul>
   <li>Listen for syslog messages over TCP on port <code>514</code>.</li>
-  <li>Save logs in <code>/var/log/flowdb/syslog/collector-a/</code> with filenames based on hostname and timestamp.</li>
+  <li>Save logs in <code>/var/log/db/syslog/collector-a/</code> with filenames based on hostname and timestamp.</li>
   <li>Store the <strong>raw</strong> message without modification.</li>
 </ul>
 
@@ -33,7 +33,7 @@ module(load="imtcp")
 input(type="imtcp" port="514")
 
 template(name="CustomLogFile" type="string"
-  string="/var/log/flowdb/syslog/collector-a/%hostname%_%timereported:1:10:date-rfc3339%%timereported:11:8:date-rfc3339%.log"
+  string="/var/log/db/syslog/collector-a/%hostname%_%timereported:1:10:date-rfc3339%%timereported:11:8:date-rfc3339%.log"
 )
 
 template(name="RawSRXLog" type="string" string="%rawmsg%\n")
@@ -94,7 +94,7 @@ services:
           memory: 1g
     volumes:
       - ./rsyslog.conf:/etc/rsyslog.conf:ro
-      - /var/log/flowdb/syslog/collector-a:/var/log/flowdb/syslog/collector-a
+      - /var/log/db/syslog/collector-a:/var/log/db/syslog/collector-a
       - ./logrotate.d/collector-a:/etc/logrotate.d/collector-a:ro
 </pre>
 
@@ -108,7 +108,7 @@ services:
 </ul>
 
 <pre>
-/var/log/flowdb/syslog/collector-a/*.log {
+/var/log/db/syslog/collector-a/*.log {
     rotate 9999
     missingok
     notifempty
@@ -122,7 +122,7 @@ services:
     hourly
     create 0644 root root
     postrotate
-        /usr/bin/find /var/log/flowdb/syslog/collector-a/ -type f -mmin +2880 -delete
+        /usr/bin/find /var/log/db/syslog/collector-a/ -type f -mmin +2880 -delete
     endscript
 }
 </pre>
@@ -138,14 +138,14 @@ services:
   </li>
   <li>Send syslog messages to TCP port <code>514</code> of the host.</li>
   <li>Logs will be stored in:
-    <pre>/var/log/flowdb/syslog/collector-a/</pre>
+    <pre>/var/log/db/syslog/collector-a/</pre>
   </li>
 </ol>
 
 <h2>Notes</h2>
 <ul>
   <li>Requires root privileges to bind to port 514.</li>
-  <li>Ensure <code>/var/log/flowdb/syslog/collector-a</code> exists on the host and has correct permissions.</li>
+  <li>Ensure <code>/var/log/db/syslog/collector-a</code> exists on the host and has correct permissions.</li>
 </ul>
 
 
