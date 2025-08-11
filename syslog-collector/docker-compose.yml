@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  rsyslog:
+    build: .
+    container_name: rsyslog
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./rsyslog.conf:/etc/rsyslog.conf:ro
+      - ./rsyslog.d:/etc/rsyslog.d:ro
+    ports:
+      - "514:514/udp"
