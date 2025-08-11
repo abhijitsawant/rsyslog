@@ -12,5 +12,5 @@ services:
           memory: 1g     # Limit to 1 GB RAM
     volumes:
       - ./rsyslog.conf:/etc/rsyslog.conf:ro
-      - /var/log/flowdb/syslog/collector-a:/var/log/flowdb/syslog/collector-a
+      - /var/log/db/syslog/collector-a:/var/log/db/syslog/collector-a
       - ./logrotate.d/collector-a:/etc/logrotate.d/collector-a:ro
