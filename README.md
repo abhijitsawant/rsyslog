@@ -147,3 +147,106 @@ services:
   <li>Requires root privileges to bind to port 514.</li>
   <li>Ensure <code>/var/log/flowdb/syslog/collector-a</code> exists on the host and has correct permissions.</li>
 </ul>
+
+
+
+
+
+
+
+
+
+
+<h1>Syslog Collector</h1>
+
+<p>
+This project sets up a <strong>Syslog Collector</strong> using <code>rsyslog</code> inside a Docker container.  
+It listens for incoming syslog messages over <strong>UDP/514</strong> from a Juniper SRX firewall and forwards them to another server over <strong>TCP/514</strong>.
+</p>
+
+<h2>Overview</h2>
+<ul>
+  <li><strong>Collector Host IP:</strong> 192.168.210.171</li>
+  <li><strong>Source Device (SRX) IP:</strong> 192.168.210.191 (sending logs over UDP/514)</li>
+  <li><strong>Forwarding Target Host IP:</strong> 192.168.210.170 (receiving logs over TCP/514)</li>
+</ul>
+
+<h2>Configuration Files</h2>
+
+<h3>1. rsyslog.conf</h3>
+<pre>
+module(load="imudp")
+input(type="imudp" port="514")
+
+# Include extra config files
+include(file="/etc/rsyslog.d/*.conf" mode="optional")
+</pre>
+
+<h3>2. rsyslog.d/10-forward.conf</h3>
+<pre>
+# Define template to send the full raw syslog message
+template(name="FullRawSyslog" type="string" string="%rawmsg%\n")
+
+# Forward all syslogs to Host-B over TCP using raw format
+*.* action(
+  type="omfwd"
+  target="192.168.29.170"
+  port="514"
+  protocol="tcp"
+  template="FullRawSyslog"
+  keepalive="on"
+  action.resumeRetryCount="-1"
+  queue.type="linkedlist"
+  queue.size="10000"
+)
+</pre>
+
+<h3>3. Dockerfile</h3>
+<pre>
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y rsyslog && \
+    rm -rf /var/lib/apt/lists/*
+
+CMD ["rsyslogd", "-n"]
+</pre>
+
+<h3>4. docker-compose.yml</h3>
+<pre>
+version: '3.8'
+
+services:
+  rsyslog:
+    build: .
+    container_name: rsyslog
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./rsyslog.conf:/etc/rsyslog.conf:ro
+      - ./rsyslog.d:/etc/rsyslog.d:ro
+    ports:
+      - "514:514/udp"
+</pre>
+
+<h2>Usage</h2>
+<ol>
+  <li>Clone this repository:</li>
+  <pre>git clone &lt;your-repo-url&gt; && cd &lt;repo-folder&gt;</pre>
+  
+  <li>Build and start the container:</li>
+  <pre>docker compose up --build -d</pre>
+  
+  <li>Verify that rsyslog is running:</li>
+  <pre>docker logs rsyslog</pre>
+  
+  <li>Configure your Juniper SRX to send syslogs to <code>192.168.210.171</code> over UDP/514.</li>
+</ol>
+
+<h2>Notes</h2>
+<ul>
+  <li>This container listens for syslog over UDP/514 and forwards them to another syslog server over TCP/514.</li>
+  <li>The forwarding target IP and port can be changed in <code>rsyslog.d/10-forward.conf</code>.</li>
+  <li>Ensure the target syslog server is configured to accept TCP connections on port 514.</li>
+</ul>
+
