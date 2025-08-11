@@ -1,0 +1,17 @@
+/var/log/flowdb/syslog/collector-a/*.log {
+    rotate 9999
+    missingok
+    notifempty
+    size 0
+    minsize 1
+    maxage 1
+    su root root
+    copytruncate
+    dateext
+    dateformat _%Y%m%d_%H%M%S
+    hourly
+    create 0644 root root
+    postrotate
+        /usr/bin/find /var/log/flowdb/syslog/collector-a/ -type f -mmin +2880 -delete
+    endscript
+}
