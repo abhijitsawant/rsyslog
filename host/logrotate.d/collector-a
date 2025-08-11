@@ -1,4 +1,4 @@
-/var/log/flowdb/syslog/collector-a/*.log {
+/var/log/db/syslog/collector-a/*.log {
     rotate 9999
     missingok
     notifempty
