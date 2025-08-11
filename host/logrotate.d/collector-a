@@ -12,6 +12,6 @@
     hourly
     create 0644 root root
     postrotate
-        /usr/bin/find /var/log/flowdb/syslog/collector-a/ -type f -mmin +2880 -delete
+        /usr/bin/find /var/log/db/syslog/collector-a/ -type f -mmin +2880 -delete
     endscript
 }
