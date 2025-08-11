@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  rsyslog:
+    build: .
+    container_name: rsyslog
+    restart: always
+    network_mode: "host"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'    # Limit to 1 CPU core
+          memory: 1g     # Limit to 1 GB RAM
+    volumes:
+      - ./rsyslog.conf:/etc/rsyslog.conf:ro
+      - /var/log/flowdb/syslog/collector-a:/var/log/flowdb/syslog/collector-a
+      - ./logrotate.d/collector-a:/etc/logrotate.d/collector-a:ro
