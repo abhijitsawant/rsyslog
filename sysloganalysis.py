@@ -35,9 +35,11 @@ def process_file(file_path):
                         deviceId = device_parts[1] if len(device_parts) > 1 else "unknown"
                         
                         # Parse timestamp more efficiently
-                        timestamp_parts = space_split_pattern.split(temp[0].strip())
-                        if len(timestamp_parts) >= 5:
+                        timestamp_parts = temp[0].split(" ")+temp[1].split(" ")+temp[2].split(" ")
+
+                        if len(timestamp_parts):
                             timestamp = f"{timestamp_parts[1]}-{timestamp_parts[0]} {timestamp_parts[2]}:{timestamp_parts[3]}:{timestamp_parts[4]}"
+                            print(timestamp)
                         else:
                             timestamp = "unknown"
                         
@@ -51,7 +53,7 @@ def process_file(file_path):
                         # Parse IP/port information using regex
                         ip_port_match = ip_port_pattern.search(temp[5])
                         if ip_port_match:
-                            sourceIP = ip_port_match.group(1)
+                            sourceIP = ip_port_match.group(1).split(" ")[1]
                             destinationIP = ip_port_match.group(3)
                             destinationPort = ip_port_match.group(4)
                         else:
@@ -59,7 +61,9 @@ def process_file(file_path):
                         
                         # Parse protocol
                         protocol_match = protocol_pattern.search(temp[5])
-                        protocol = protocol_match.group(1) if protocol_match else "unknown"
+                        protocol_pattern_temp = temp[5].split("(")[0].split(" ")
+                        temp_len = len(protocol_pattern_temp)
+                        protocol = protocol_pattern_temp[temp_len - 6]
                         
                         # Create unique key and count in dictionary
                         key = f"{deviceId}_{sourceIP}_{destinationIP}_{destinationPort}_{protocol}"
@@ -75,7 +79,7 @@ def process_file(file_path):
         if len(key_parts) >= 5:
             flowList.append({
                 "key": key,
-                "timestamp": "aggregated",  # We lose individual timestamps with this approach
+                "timestamp": timestamp,
                 "deviceId": key_parts[0],
                 "sessionClosureReason": "aggregated",  # We lose individual reasons
                 "sourceIP": key_parts[1],
@@ -95,13 +99,15 @@ def process_file(file_path):
 
 def extract_fields_parallel(sourceDir):
     start_time = time.time()
-    
+    filesProcessed = []
+
     # Get all files with proper filtering
     file_paths = []
     for f in os.listdir(sourceDir):
         full_path = os.path.join(sourceDir, f)
         if os.path.isfile(full_path) and not f.startswith('.'):  # Skip hidden files
             file_paths.append(full_path)
+            filesProcessed.append(full_path)
     
     # Use imap_unordered for better memory efficiency with large files
     with Pool(min(cpu_count(), len(file_paths) or 1)) as pool:
@@ -128,6 +134,7 @@ def extract_fields_parallel(sourceDir):
     for key, count in combined_flows.items():
         key_parts = key.split('_')
         if len(key_parts) >= 5:
+            print(key_parts)
             flowList.append({
                 "key": key,
                 "timestamp": "aggregated",
@@ -157,6 +164,7 @@ def extract_fields_parallel(sourceDir):
         "elapsedTime": elapsedTime,
         "totalConnections": connections,
         "totalSizeProcessed": f"{totalSizeProcessed/(1024*1024*1024):.2f}GB",
+        "filesProcessed": filesProcessed,
         "processingPerformance": {
             "connectionsPerSecond": f"{connections/elapsedTime:.2f} connections/second",
             "sizePerSecond": f"{totalSizeProcessed/(elapsedTime * 1024*1024*1024):.2f} GB/second" if elapsedTime > 0 else "0.00 GB/second"
@@ -165,7 +173,7 @@ def extract_fields_parallel(sourceDir):
 
     response = {
         "responseHeader": {
-            "type": "parsingOnly",
+            "location": "parsingOnly",
             "performance": performance,
             "sessionStats": stats
         },
@@ -188,6 +196,7 @@ def generate_output_filename(output_dir):
     return os.path.join(output_dir, f"v9_output_{timestamp}.json")
 
 if __name__ == "__main__":
+    os.system("clear")
     response = extract_fields_parallel("syslog")
     outputPath = generate_output_filename("output")
     print(json.dumps(response["responseHeader"], indent=4))
